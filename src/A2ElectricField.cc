@@ -1,18 +1,23 @@
+/***** Electric Field Class *****
+ * Currently only implements a uniform electric field.
+ * Written for use with A2TPC.
+ ***** AC Postuma 2021 *****/
+
 #include "A2ElectricField.hh"
 
-#include "G4UniformElectricField.hh"
-#include "G4UniformMagField.hh"
-#include "G4MagneticField.hh"
-#include "G4FieldManager.hh"
-#include "G4TransportationManager.hh"
-#include "G4EquationOfMotion.hh"
-#include "G4EqMagElectricField.hh"
-#include "G4Mag_UsualEqRhs.hh"
-#include "G4MagIntegratorStepper.hh"
-#include "G4MagIntegratorDriver.hh"
-#include "G4ChordFinder.hh"
+#include "G4UniformElectricField.hh" //base class
+#include "G4UniformMagField.hh" //magnetic field
+#include "G4MagneticField.hh" //also magnetic field - why are you here?
+#include "G4FieldManager.hh" //EM field manager
+#include "G4TransportationManager.hh" //manages transport in fields
+#include "G4EquationOfMotion.hh" //general eqn of motion
+#include "G4EqMagElectricField.hh" //eqn of motion in field
+#include "G4Mag_UsualEqRhs.hh" //I'm not sure what this does
+#include "G4MagIntegratorStepper.hh" //integration of motion in field
+#include "G4MagIntegratorDriver.hh" //integration of motion in field
+#include "G4ChordFinder.hh" //not sure about this either
 
-#include "G4ExplicitEuler.hh"
+#include "G4ExplicitEuler.hh" //different steppers
 #include "G4ImplicitEuler.hh"
 #include "G4SimpleRunge.hh"
 #include "G4SimpleHeum.hh"
@@ -26,8 +31,9 @@
 #include "G4PhysicalConstants.hh"
 #include "G4SystemOfUnits.hh"
 
+/***** Constructor *****/
 A2ElectricField::A2ElectricField(){
-	//constructor: let's do this the A2 way and here set everything to NULL
+	//initiate pointers to NULL
 	fField=NULL;
 	fEquation=NULL;
 	fFieldManager=NULL;
@@ -36,11 +42,11 @@ A2ElectricField::A2ElectricField(){
 	fChordFinder=NULL;
 	fStepperType=4; //choose a stepper
 	fMinStep=0.010*mm; //initialize minimum step length
-//	return fField;
 }
 
+/***** Destructor ******/
 A2ElectricField::~A2ElectricField(){
-	//destructor: delete some shit
+	//remove things that require manual deletion
 	delete fField;
 	delete fEquation;
 	delete fFieldManager;
@@ -49,26 +55,26 @@ A2ElectricField::~A2ElectricField(){
 	delete fChordFinder;
 }
 
+/**** Construct field of specified strength *****/
 G4ElectricField* A2ElectricField::Construct(G4double fieldStrength){
-	//do things
-	fField= new G4UniformElectricField(G4ThreeVector(0.0,0.0,fieldStrength*kilovolt/cm));
-	fEquation= new G4EqMagElectricField(fField);
-	fFieldManager = GetGlobalFieldManager();
-	UpdateIntegrator();
+	fField= new G4UniformElectricField(G4ThreeVector(0.0,0.0,fieldStrength*kilovolt/cm)); //create field
+	fEquation= new G4EqMagElectricField(fField); //create equation for field
+	fFieldManager = GetGlobalFieldManager(); //get field manager
+	UpdateIntegrator(); //set up integrator to do motion in field
 	return fField;
 }
 
+/***** This function updates integration of motion in field *****/
 void A2ElectricField::UpdateIntegrator(){
-	CreateStepper();
-	//fIntegrationDriver = new G4MagInt_Driver(fMinStep, fStepper, fStepper->GetNumberOfVariables());
-	fChordFinder = new G4ChordFinder(fIntegrationDriver);
-	fFieldManager->SetChordFinder(fChordFinder);
-	fFieldManager->SetDetectorField(fField);
+	CreateStepper(); //pick stepper and get integration driver based on stepper
+	fChordFinder = new G4ChordFinder(fIntegrationDriver); //chord finder based on this stepper 
+	fFieldManager->SetChordFinder(fChordFinder); //attach to field manager
+	fFieldManager->SetDetectorField(fField); //attach to detector
 }
 
+/***** This function creates the stepper *****/
 void A2ElectricField::CreateStepper(){
-	const G4int nvar = 8;
-
+	const G4int nvar = 8; //varaibles in each equation
   	auto oldStepper= fStepper;
 
   	switch ( fStepperType )
@@ -117,11 +123,12 @@ void A2ElectricField::CreateStepper(){
 
   	delete oldStepper;
   
+	//make integration driver based on this stepper
 	fIntegrationDriver = new G4MagInt_Driver(fMinStep, fStepper, fStepper->GetNumberOfVariables());
   	//fIntegrationDriver->RenewStepperAndAdjust(fStepper);
 }
 
-//manually set value in Z
+/****** This function changes the strength of a defined field *****/
 void A2ElectricField::SetFieldValue(G4double fieldValue){
 	G4ThreeVector fieldVector(0.0,0.0,fieldValue*kilovolt/cm);
 	G4FieldManager *fieldManager = GetGlobalFieldManager();
@@ -134,14 +141,14 @@ void A2ElectricField::SetFieldValue(G4double fieldValue){
 	fEquation->SetFieldObj(fField);
 }
 
-//needs to be here for class to work
+/***** This function is required by the class *****/
 void A2ElectricField::GetFieldValue(const G4double point[4], G4double *field) const{
 	//reimplement from G4ElectricField
 	fField->GetFieldValue(point, field);
 }
 
 
-
+/***** Also required for this class *****/
 G4FieldManager* A2ElectricField::GetGlobalFieldManager(){
 	return G4TransportationManager::GetTransportationManager()->GetFieldManager();
 }

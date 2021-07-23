@@ -26,7 +26,7 @@ public:
 protected:
 	virtual void Transport(G4FastStep&, const G4FastTrack&, G4String, G4double, G4double, G4double, G4double, G4double, G4double, G4double, G4double); //move the electron through the active volume
 	void ProcessSecondaries(); //process created secondary particles
-	void ProcessHit(G4ThreeVector,G4double,G4double);
+	void ProcessHit(const G4FastTrack&,G4ThreeVector,G4double);
 	void GenerateDetectorResponse(); //record particles in anode
 	A2Target* fA2Target;
 	A2SD* fA2SD;

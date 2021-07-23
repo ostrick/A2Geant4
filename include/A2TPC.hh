@@ -63,10 +63,11 @@ private: //private declarations
         //G4EqMagElectricField*   pEquation;
         //G4ChordFinder*          pChordFinder;
 	//G4UniformElectricField* fElectricField;
-	G4EqMagElectricField* fEquation;
-	G4VIntegrationDriver* fIntegrationDriver;
-	G4ChordFinder* fChordFinder;
+	//G4EqMagElectricField* fEquation;
+	//G4VIntegrationDriver* fIntegrationDriver;
+	//G4ChordFinder* fChordFinder;
 	A2ElectricField* fElectricField;
+	G4Region* fRegionActiveGas;
 
 	//logical and physical volumes that are part of every detector class
 	G4LogicalVolume* fMotherLogic; //logical volume of the mother
@@ -122,7 +123,10 @@ private: //private declarations
 	G4double fCathodeDistance;
 	G4double fWireThickness;
 	G4double fWireSpacing;
-	
+	G4int fHeIsotope;
+	G4double fHePressure;
+	G4String fHeMaterial;
+
 	//for placing anode
 	//G4VPhysicalVolume** fAnodePhysi;
 } ; 

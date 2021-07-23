@@ -1,9 +1,12 @@
-/***** Time Projection Chamber
-A Postuma 2021 *****/
+/***** Time Projection Chamber *****
+ * Small TPC to be used in TPC+CB experiment.
+ * Based on specifications by V Sokhoyan and E Maev.
+ * Reads parameters from data/TPC.dat.
+ * Requires class A2HeedModel for proper electron propagation.
+ ***** AC Postuma 2021 *****/
 
 #include "A2TPC.hh"
 
-//then, include a bunch of useful Geant4 stuff
 #include "G4SDManager.hh" //manage sensitive detector
 #include "G4Tubs.hh" //cylinder
 #include "G4Box.hh" //box
@@ -24,80 +27,76 @@ A Postuma 2021 *****/
 #include "A2VisSD.hh" //visual sensitive detector
 #include "A2MagneticField.hh" //magnetic fields
 #include "A2ElectricField.hh" //my electric field class
-//#include "A2EMField.hh"
+#include "A2HeedModel.hh" //my electron propagation model
+#include "G4FastSimulationManager.hh"
+#include "G4ProductionCuts.hh"
+#include "G4ProductionCutsTable.hh"
 
 #include "G4FieldManager.hh" //manage the fields
 #include "G4TransportationManager.hh" //transport through fields
 #include "CLHEP/Units/SystemOfUnits.h" //units
 #include "G4IntegrationDriver.hh"
 
-using namespace CLHEP;
+using namespace CLHEP; //units
 
-//first, a constructor
+/***** Constuctor *****/
 A2TPC::A2TPC(){
-	//initiate all pointers to NULL
+	//initiate pointers to NULL
 	
-	//first, volumes: the three that are in every tgt file
+	//first, volumes: the three that are in every target file
 	fMotherLogic = NULL; //mother logical volume
 	fMyLogic = NULL; //the constructed logical volume
 	fMyPhysi = NULL; //the constructed physical volume
 	
-	//for this detector class
+	//then the volumes specific to this target
 	//volumes in MakeVessel()
-	fVesselLogic=NULL;
-	fMainCellLogic = NULL;
-	//fMainCellHeLogic = NULL;
-	fMainCellEndLogic = NULL;
-	fExtCellLogic = NULL;
-	//fExtCellHeLogic = NULL;
-	fConeLogic = NULL;
-	//fConeHeLogic = NULL;
-	fBeWindowLogic = NULL;
-	fVesselHeLogic = NULL;
-
+	fVesselLogic=NULL; //contains all vessel parts
+	fMainCellLogic = NULL; //main vessel shell
+	fMainCellEndLogic = NULL; //flat end of main vessel
+	fExtCellLogic = NULL; //extension cells
+	fConeLogic = NULL; //conical end of main vessel
+	fBeWindowLogic = NULL; //beryllium beam windows
+	fVesselHeLogic = NULL; //helium inside vessel (union solid)
 	//volumes in MakeAnodeCathode()
-	fAnodeLogic = NULL;
-        fAnodeCentreLogic= NULL;
-        fAnodeRingLogic= NULL;
-	fCathodeLogic= NULL;
-	for(G4int i=0;i<6;i++){
-		fAnodeSecLogic[i]=NULL;
-	}
-	
+	fAnodeLogic = NULL; //contains all anode parts
+        fAnodeCentreLogic= NULL; //centre of anode
+        fAnodeRingLogic= NULL; //ring around anode centre
+	fCathodeLogic= NULL; //cathode (one piece)
+	for(G4int i=0;i<6;i++)fAnodeSecLogic[i]=NULL; //array of anode segments
 	//volumes in MakeGrid()
-	fGridLogic= NULL;
-	for(G4int j=0;j<200;j++){
-		fWireLogic[j]=NULL;
-	}
+	fGridLogic= NULL; //contains entire grid
+	for(G4int j=0;j<200;j++)fWireLogic[j]=NULL; //array of grid wires
 	
 	//some sensitive detector stuff
-        fRegionAnode = new G4Region("Anode");
-        fAnodeSD = NULL;
-        fAnodeVisSD = NULL;
+        fAnodeSD = NULL; //sensitive detector
+        fAnodeVisSD = NULL; //visualization
+        fRegionAnode = new G4Region("Anode"); //set anode as a region
 
 	//some E field stuff
-	fElectricField = NULL;
-	
+	fElectricField = NULL; //electric field object
+	fRegionActiveGas = new G4Region("ActiveGas"); //set helium as a region
+
 	//initiate the nist manager
 	fNistManager=G4NistManager::Instance();
 
 	//initiate other relevant pointers here
-	fIsOverlapVol=true;
+	fIsOverlapVol=true; //check overlaps in geometry
 
 	//read dimensions from a parameter file
 	ReadParameters("data/TPC.dat");
 }
 
-//destructor
+/***** Destructor *****/
 A2TPC::~A2TPC(){
-	if(fRegionAnode) delete fRegionAnode; //remove the sensitive detector
-	if(fAnodeSD) delete fAnodeSD; //remove the sensitive detector
-	if(fAnodeVisSD) delete fAnodeVisSD; //remove the sensitive detector
-	if(fElectricField) delete fElectricField; //remove electric field
+	//remove things that requuire manual deletion
+	if(fRegionAnode) delete fRegionAnode; //anode region
+	if(fRegionActiveGas) delete fRegionActiveGas; //active gas region
+	if(fAnodeSD) delete fAnodeSD; //sensitive detector
+	if(fAnodeVisSD) delete fAnodeVisSD; //sensitive detector
+	if(fElectricField) delete fElectricField; //electric field
 }
 
-//main constructor function called inside main construction
-//maybe where the pointer is initiated to NULL??
+/***** This function in called in DetectorSetup to build the TPC *****/
 G4VPhysicalVolume* A2TPC::Construct(G4LogicalVolume* MotherLogical, G4double Z0){
 	
 	//get pointer to mother logical volume
@@ -110,9 +109,9 @@ G4VPhysicalVolume* A2TPC::Construct(G4LogicalVolume* MotherLogical, G4double Z0)
 	DefineMaterials(); //define relevant materials
 	MakeVessel(); //build fVesselLogic
 	MakeAnodeCathode(); //build fAnodeLogic and fCathodeLogic
-	MakeGrid();
-	MakeSensitiveDetector(); //make the anode into a detector
-	MakeField(); //create field inside the detector
+	MakeGrid(); //build fGridLogic
+	MakeSensitiveDetector(); //assign anode to sensitive detector
+	MakeField(); //create electric field inside the active volume
 	PlaceParts(); //place the seperate detector parts into fMyLogic
 	
 	//place fMyLogic into fMotherLogic
@@ -126,19 +125,19 @@ G4VPhysicalVolume* A2TPC::Construct(G4LogicalVolume* MotherLogical, G4double Z0)
 void A2TPC::MakeVessel(){
 	/***** shapes ******/
 	//overall vessel shape
-	G4Tubs *fVessel = new G4Tubs("Vessel",
-				0,
-				fRadius+fThickness,
-				fLength/2+fExtension+fConeLength,
-				0.*deg,
-				360.*deg);
+	G4Tubs *fVessel = new G4Tubs("Vessel", //name
+				0, //inner radius
+				fRadius+fThickness, //outer radius
+				fLength/2+fExtension+fConeLength, //half length
+				0.*deg, //start angle
+				360.*deg); //spanning angle
 	//main cell steel shell
-	G4Tubs *fMainCell = new G4Tubs("MainCell", //name
-				fRadius,
+	G4Tubs *fMainCell = new G4Tubs("MainCell",
+				fRadius, 
 				fRadius+fThickness,
 				fLength/2,
-                                0.*deg,       //start angle
-                                360.*deg);    //spanning angle
+                                0.*deg,
+                                360.*deg);
 	//circular end of main cell, with hole for extension
 	G4Tubs *fMainCellEnd = new G4Tubs("MainCellEnd",
 				fExtRadius+fThickness,
@@ -241,7 +240,7 @@ void A2TPC::MakeVessel(){
 	//helium
 	fVesselHeLogic = new G4LogicalVolume
 		(fVesselHe,
-		 fNistManager->FindOrBuildMaterial("ATGasPure"),
+		 fNistManager->FindOrBuildMaterial(fHeMaterial),
 		 "VesselHeLogic");
 	//extension cells
 	fExtCellLogic = new G4LogicalVolume
@@ -275,13 +274,13 @@ void A2TPC::MakeVessel(){
 
 	/**** place things inside of VesselLogic ****/
 	//main cell
-    	new G4PVPlacement (0,                    //rotation
+    	new G4PVPlacement (0, //rotation
                      G4ThreeVector(0,0,0), //position
-                     fMainCellLogic,         //logical volume
-                     "MainCellPlacement",       //name
-                     fVesselLogic,             //mother logic
-                     false,                //pMany = false always
-                     2,fIsOverlapVol);    //unique copy number
+                     fMainCellLogic, //logical volume
+                     "MainCellPlacement", //name
+                     fVesselLogic, //mother logic
+                     false, //pMany = false always
+                     2,fIsOverlapVol); //unique copy number
 	//main cell endpiece
     	new G4PVPlacement(0,
 		    G4ThreeVector(0,0,-(fLength+fEndThickness)/2),
@@ -297,43 +296,43 @@ void A2TPC::MakeVessel(){
 		    fVesselLogic,
 		    4,fIsOverlapVol);
 	//extension cells
-	new G4PVPlacement (0,
-		   	G4ThreeVector(0,0,(fLength+fExtension)/2+fConeLength),
-			fExtCellLogic,
-			"ExtCellPlacement1",
-			fVesselLogic,
-			6,fIsOverlapVol);
 	new G4PVPlacement(0,
-			G4ThreeVector(0,0,-(fLength+fExtension)/2-fEndThickness),
-			fExtCellLogic,
-			"ExtCellPlacement2",
-			fVesselLogic,
-			7,fIsOverlapVol);
+		   G4ThreeVector(0,0,(fLength+fExtension)/2+fConeLength),
+		   fExtCellLogic,
+	  	   "ExtCellPlacement1",
+		   fVesselLogic,
+		   6,fIsOverlapVol);
+	new G4PVPlacement(0,
+		   G4ThreeVector(0,0,-(fLength+fExtension)/2-fEndThickness),
+	 	   fExtCellLogic,
+		   "ExtCellPlacement2",
+		   fVesselLogic,
+		   7,fIsOverlapVol);
 	//beryllium windows - for now overlapping with helium
         new G4PVPlacement(0,
-                        G4ThreeVector(0,0,fLength/2 + fExtension -fBeThickness/2+fConeLength),
-                        fBeWindowLogic,
-                        "BeWindowPlacement1",
-                        fVesselLogic,
-                        10,fIsOverlapVol);
+                   G4ThreeVector(0,0,fLength/2 + fExtension -fBeThickness/2+fConeLength),
+                   fBeWindowLogic,
+                   "BeWindowPlacement1",
+                   fVesselLogic,
+                   10,fIsOverlapVol);
         new G4PVPlacement(0,
-                        G4ThreeVector(0,0,-(fLength/2+fExtension-fBeThickness/2+fEndThickness)),
-                        fBeWindowLogic,
-                        "BeWindowPlacement2",
-                        fVesselLogic,
-                        11,fIsOverlapVol);
+                   G4ThreeVector(0,0,-(fLength/2+fExtension-fBeThickness/2+fEndThickness)),
+                   fBeWindowLogic,
+                   "BeWindowPlacement2",
+                   fVesselLogic,
+                   11,fIsOverlapVol);
 }
 
 /***** This function creates a segmented anode and a cathode *****/
 void A2TPC::MakeAnodeCathode(){
         /***** solids for anode geometry *****/
         //main volume to hold sub-pieces
-	G4Tubs *fAnode = new G4Tubs("Anode",
-                                        0,
-                                        fRadius,
-                                        (fGThickness)/2,
-                                        0.*deg,
-                                        360.*deg);
+	G4Tubs *fAnode = new G4Tubs("Anode", //name
+                                        0, //inner radius
+                                        fRadius, //outer radius
+                                        (fGThickness)/2, //half length
+                                        0.*deg, //start angle
+                                        360.*deg); //spanning angle
 	//circular central piece (G-10)
         G4Tubs *fAnodeCentre = new G4Tubs("AnodeCentre",
                                         0,
@@ -350,10 +349,10 @@ void A2TPC::MakeAnodeCathode(){
                                         360.*deg);
 	
 	/***** logical volumes *****/	
-	//volume holding entire anode
+	//volume holding entire anode (helium)
 	fAnodeLogic = new G4LogicalVolume
                         (fAnode,
-                         fNistManager->FindOrBuildMaterial("ATGasPure"), //this one contains the others - should be helium like the rest of the cell
+                         fNistManager->FindOrBuildMaterial(fHeMaterial),
                          "AnodeLogic");
 	//circular central piece (G-10)
         fAnodeCentreLogic = new G4LogicalVolume
@@ -446,7 +445,7 @@ void A2TPC::MakeAnodeCathode(){
 
 /**** This function builds the wire grid *****/
 void A2TPC::MakeGrid(){
-	//main volume to contain wires
+	/***** make main volume containing wires *****/
 	//solid: cylinder
 	G4Tubs* fGrid = new G4Tubs("Grid", //name
 				0, //inner radius
@@ -457,14 +456,16 @@ void A2TPC::MakeGrid(){
 	//logical volume
 	fGridLogic = new G4LogicalVolume(
 			fGrid, //solid
-			fNistManager->FindOrBuildMaterial("ATGasPure"), //material: helium, same as fVesselHeLogic
+			fNistManager->FindOrBuildMaterial(fHeMaterial), //material: helium, same as fVesselHeLogic
 			"GridLogic"); //name
+
+	/***** define parameters to make wires ******/
 	G4int nWires = fRadius/fWireSpacing-1; //how many different length wires to build
 	G4double fHWL[200]; //half length of each wire
 	G4VisAttributes* grey   = new G4VisAttributes( G4Colour(0.5,0.5,0.5)  );
         fGridLogic->SetVisAttributes(G4VisAttributes::Invisible);
 	
-	//make and place each individual wire
+	/***** make and place each individual wires ******/
 	for(G4int l=0; l<nWires; l++){
 		//find length needed to cross cylinder at a certain dinstace from the origin
 		fHWL[l] = sqrt(fRadius*fRadius - l*l*fWireSpacing*fWireSpacing);
@@ -529,68 +530,42 @@ void A2TPC::MakeGrid(){
 
 /***** this function makes the anode into a sensitive detector *****/
 void A2TPC::MakeSensitiveDetector(){
-        if(!fAnodeSD){ //check if SD is already defined
+	/***** define and register sensitive detector *****/
+        if(!fAnodeSD){ //if SD not already defined
         G4SDManager* SDman = G4SDManager::GetSDMpointer(); //get pointer to SD manager
-        fAnodeSD = new A2SD("AnodeSD",2+fRadialSecs*fAngularSecs); //create a new sensitive detector
+        fAnodeSD = new A2SD("AnodeSD",2+fRadialSecs*fAngularSecs); //create a new SD
         SDman->AddNewDetector(fAnodeSD); //add this detector to the SD manager
-        //set each piece of anode as part of the sensitive detector
-	fAnodeCentreLogic->SetSensitiveDetector(fAnodeSD);
-        fAnodeRingLogic->SetSensitiveDetector(fAnodeSD);
-	//set each piece of anode as part of anode region
-        fRegionAnode->AddRootLogicalVolume(fAnodeCentreLogic);
-	fRegionAnode->AddRootLogicalVolume(fAnodeRingLogic);
-	for(G4int n=0; n<fRadialSecs; n++){
-		fAnodeSecLogic[n]->SetSensitiveDetector(fAnodeSD);
-		fRegionAnode->AddRootLogicalVolume(fAnodeSecLogic[n]);
+
+        /***** set each piece of anode as part of the sensitive detector *****/
+	fAnodeCentreLogic->SetSensitiveDetector(fAnodeSD); //make sensitive
+        fAnodeRingLogic->SetSensitiveDetector(fAnodeSD); //make sensitive
+        fRegionAnode->AddRootLogicalVolume(fAnodeCentreLogic); //add to region
+	fRegionAnode->AddRootLogicalVolume(fAnodeRingLogic); //add to region
+	for(G4int n=0; n<fRadialSecs; n++){ //for each anode section
+		fAnodeSecLogic[n]->SetSensitiveDetector(fAnodeSD); //make sensitive
+		fRegionAnode->AddRootLogicalVolume(fAnodeSecLogic[n]); //add to region
 	}
     }
 }
 
-/***** this function creates a uniform electric field through the target *****/
+/***** this function creates electric field and field processes for the TPC *****/
 void A2TPC::MakeField(){
-	//this is getting unruly 
-	fElectricField = new A2ElectricField(); //create a field at zero first
-	fElectricField->Construct(2);
-	//fElectricField->SetDetectorField(fVesselLogic);
-	/***
-	G4cout<<"Making TPC electric field..."<<G4endl;
-	//create the field: for now uniform, strength 100 kV/cm
-	//NTS: what direction: probably in z: plus or minus??? should it point towards or away from cathode???
-	fElectricField = new G4UniformElectricField(G4ThreeVector(0.0,0.0,2.0*kilovolt/cm));
-	//fElectricField = new G4UniformElectricField(G4ThreeVector(0.0,0.0,100.0*kilovolt/cm));
-	fElectricField = new A2ElectricField(); //create a field at zero first
-	//G4ThreeVector fieldVector(0.0,0.0,2*kilovolt/cm); //define a value to give it
-	//fElectricField->SetPureElectricFieldValue(fieldVector); //assign field to be electric at this strength
-	//G4FieldManager* fieldManager = fElectricField->GetGlobalFieldManager();
-	//fieldManager->SetDetectorField(fElectricField);
-	//get field manager
-	//G4FieldManager* fieldManager = G4TransportationManager::GetTransportationManager()->GetFieldManager();
-	G4FieldManager* fieldManager = new G4FieldManager(fElectricField);
-        fVesselLogic->SetFieldManager(fieldManager,true);
-	//define equation of motion of field
-	fEquation = new G4EqMagElectricField(fElectricField);
-	//now a stepper: according to default Geant4 method of calculating stepper in E or B field
-	fEquation->SetFieldObj(fElectricField);
-	auto fStepper = new G4DormandPrince745(fEquation,8); //eq of motion, nvariables
-	//and an integration driver, to perform the integration of the steps
-	fIntegrationDriver = new G4IntegrationDriver<G4DormandPrince745>(0.010*mm, //min step
-							fStepper, //stepper
-							8); //nvariables
-	//attach to chord finder: object that calculates the trajectory
-	fChordFinder = new G4ChordFinder(fIntegrationDriver);
-	fieldManager->SetChordFinder(fChordFinder);
-	fieldManager->SetDetectorField(fElectricField);
-	//manually set step size: should be a fraction of the physics step size
-	//fieldManager->GetChordFinder()->SetDeltaChord( 0.5*mm ); // Units: length
-	                          // Relative accuracy values:
-	//G4double minEps= 1.0e-7;  //   Minimum & value for largest steps
-	//G4double maxEps= 1.0e-6;  //   Maximum & value for smallest steps
+	/***** create uniform electric field in helium ****/
+	fElectricField = new A2ElectricField(); //create (zero) electric field
+	fElectricField->Construct(2); //set the field strength in kV/cm
+	fRegionActiveGas->AddRootLogicalVolume(fVesselHeLogic); //create active gas region
 
-	//fieldManager->SetMinimumEpsilonStep( minEps );
-	//fieldManager->SetMaximumEpsilonStep( maxEps );
-	//fieldManager->SetDeltaOneStep( 0.5e-5* mm );  // 0.5 micrometer
-**/
-
+	/***** set specific production cuts for active gas region *****/
+	G4ProductionCuts* TPCcuts = new G4ProductionCuts(); //create custom cut
+	G4ProductionCutsTable::GetProductionCutsTable()->SetEnergyRange(10*eV,1*GeV);
+	TPCcuts->SetProductionCut(0.001*nm,"e-"); //no minimum distance: make any electrons possible
+	fRegionActiveGas->SetProductionCuts(TPCcuts); //assign this cut to this region
+	
+	/***** attach model of electron drift to active gas region *****/
+	A2HeedModel *driftPhys = new A2HeedModel("Heed TPC Model",fRegionActiveGas,this,fAnodeSD); //create model
+	G4FastSimulationManager* driftMan = new G4FastSimulationManager(fRegionActiveGas); //call fast simulation manager
+	driftMan->AddFastSimulationModel(driftPhys); //add model as a fast simulation
+	driftMan->ActivateFastSimulationModel("driftPhys"); //activate model
 }
 
 
@@ -654,9 +629,9 @@ void A2TPC::PlaceParts(){
 
 /***** this function reads target dimensions from a data file *****/
 void A2TPC::ReadParameters(const char* file){
-	//set keys contained in file
-        char* keylist[] = { (char*) "TPC-Dim:", (char*) "Anode-Dim:", (char*) "Cathode-Dim:", (char*) "Grid-Dim:", (char*) "Run-Mode:", NULL};
-        enum { ETPC_dim, EAnode_dim, ECathode_dim, EGrid_dim, ERun_Mode, ENULL };
+	//define keys contained in file
+        char* keylist[] = { (char*) "TPC-Dim:", (char*) "Anode-Dim:", (char*) "Cathode-Dim:", (char*) "Grid-Dim:", (char*) "Helium:", (char*) "Run-Mode:", NULL};
+        enum { ETPC_dim, EAnode_dim, ECathode_dim, EGrid_dim, EHelium, ERun_Mode, ENULL };
         //define variables needed for reading the file
         G4int ikey, iread;
         G4int ierr = 0;
@@ -677,7 +652,7 @@ void A2TPC::ReadParameters(const char* file){
             if(!strcmp(keylist[ikey],delim)) break;
         switch( ikey ){
         default:
-		//stop running if the file contains something strange
+	    //stop running if the file contains something strange
             printf("Unrecognised delimiter: %s\n",delim);
 	    ierr++;
             break;
@@ -702,6 +677,11 @@ void A2TPC::ReadParameters(const char* file){
                             &fAlThickness,&fCathodeRadius,&fCathodeDistance);
             if (iread !=3) ierr++;
             break;
+	case EHelium:
+	    iread = sscanf(line,"%*s%i%lf",
+			    &fHeIsotope,&fHePressure);
+	    if (iread !=2) ierr++;
+	    break;
         case ERun_Mode: //run mode
             iread = sscanf(line,"%*s%d",
                            &fIsOverlapVol);
@@ -743,33 +723,14 @@ void A2TPC::DefineMaterials()
         G10->AddElement(fNistManager->FindOrBuildElement(6), 3); //carbon
         G10->AddElement(fNistManager->FindOrBuildElement(1), 3); //hydrogen
         //Anode copper
-        G4Material* Cu = new G4Material("Copper",density= 8.960*g/cm3,ncomponents=1);
-        Cu->AddElement(fNistManager->FindOrBuildElement(29),1);
+        //G4Material* Cu = new G4Material("Copper",density= 8.960*g/cm3,ncomponents=1);
+        //Cu->AddElement(fNistManager->FindOrBuildElement(29),1);
         //Cathode aluminum
         G4Material* Al = new G4Material("Aluminum", density= 2.700*g/cm3,ncomponents=1);
         Al->AddElement(fNistManager->FindOrBuildElement(13),1);
     
 	
 	/***** other stuff from a2ActiveHe3.cc *****/
-	G4Material* MylarW = new G4Material("ATMylarW", density = 1.4000*g/cm3, ncomponents = 3);
-	MylarW->AddElement(fNistManager->FindOrBuildElement(1), 4.2*perCent);           //H
-	MylarW->AddElement(fNistManager->FindOrBuildElement(6), 62.5*perCent);          //C
-	MylarW->AddElement(fNistManager->FindOrBuildElement(8), 33.3*perCent);          //O
-
-	G4Material* Teflon = new G4Material("ATTeflon", density = 2.2000*g/cm3, ncomponents = 2);
-	Teflon->AddElement(fNistManager->FindOrBuildElement(6), 24*perCent);            //C
-	Teflon->AddElement(fNistManager->FindOrBuildElement(9), 76*perCent);            //F
-
-
-	//--------------------------------------------------
-	// WLSfiber PMMA
-	//--------------------------------------------------
-
-	G4Material* PMMA = new G4Material("PMMA", density = 1.190*g/cm3, ncomponents = 3);
-	PMMA->AddElement(fNistManager->FindOrBuildElement(6), 5); //C
-	PMMA->AddElement(fNistManager->FindOrBuildElement(1), 8); //H
-	PMMA->AddElement(fNistManager->FindOrBuildElement(8), 2); //O
-
 	//Gas mixture and He3 management----------------------------------------------------
 
 	//defining He3 according to
@@ -782,7 +743,8 @@ void A2TPC::DefineMaterials()
 	//G4double he3density = 0.00247621*g/cm3; //20bar, calculated from ideal gas law
 	//G4double he3density = 0.0033*g/cm3; //20bar, calculated from ideal gas law
 	//G4double he3density = 0.004125*g/cm3; //25bar, calculated from ideal gas law
-	G4double he3density = 0.00495*g/cm3; //30bar, calculated from ideal gas law
+	//G4double he3density = 0.00495*g/cm3; //30bar, calculated from ideal gas law
+	G4double he3density = (fHePressure/20)*0.0033*g/cm3; //scale Phil's IG calculation according to pressure from parameter file 
 
 	G4Material* GasMix = new G4Material("ATGasMix", he3density, ncomponents = 2);
 	GasMix->AddElement(ATHe3, 99.95*perCent);                                       //He3
@@ -792,32 +754,21 @@ void A2TPC::DefineMaterials()
 	//----! IMPORTANT! Epoxy CURRENTLY TAKEN FROM A2 SIMULATION,------------------
 	//NO IDEA WHETHER IT IS CORRECT OR NOT
 
-	G4Material* GasPure = new G4Material("ATGasPure", he3density, ncomponents = 1);
-	GasPure->AddElement(ATHe3, 100.*perCent);                                       //He3
+	G4Material* He3GasPure = new G4Material("He3GasPure", he3density, ncomponents = 1);
+	He3GasPure->AddElement(ATHe3, 100.*perCent);                                       //He3
 
-	//Epoxy resin (C21H25Cl05) ***not certain if correct chemical formula or density
-	//for colder temperature***:
-	G4Material* EpoxyResin=new G4Material("EpoxyResin", density=1.15*g/cm3, ncomponents=4);
-	EpoxyResin->AddElement(fNistManager->FindOrBuildElement(6), 21); //carbon
-	EpoxyResin->AddElement(fNistManager->FindOrBuildElement(1), 25); //hydrogen
-	EpoxyResin->AddElement(fNistManager->FindOrBuildElement(17), 1); //chlorine
-	EpoxyResin->AddElement(fNistManager->FindOrBuildElement(8), 5);  //oxygen
+	//define He4 in a similar manner
+	G4Element* ATHe4 = new G4Element("ATHe4","ATHe4",ncomponents=1);
+	ATHe4->AddIsotope((G4Isotope*)fNistManager->FindOrBuildElement(2)->GetIsotope(1),100.*perCent);
+	G4double he4density = (fHePressure/20)*0.0033*g/cm3; //scale Phil's IG calculation according to pressure from parameter file
+	//later edit this for 4He specifically
 
-	//Amine Hardener (C8H18N2) ***not certain if correct chemical formula or density
-	//for colder temperature***:
-	G4Material* Epoxy13BAC=new G4Material("Epoxy13BAC", density=0.94*g/cm3, ncomponents=3);
-	Epoxy13BAC->AddElement(fNistManager->FindOrBuildElement(6), 8);
-	Epoxy13BAC->AddElement(fNistManager->FindOrBuildElement(1), 18);
-	Epoxy13BAC->AddElement(fNistManager->FindOrBuildElement(7), 2);
+	G4Material* He4GasPure = new G4Material("He4GasPure",he4density, ncomponents=1);
+	He4GasPure->AddElement(ATHe4, 100.*perCent);
 
-	//Epoxy adhesive with mix ratio 100:25 parts by weight resin/hardener
-	// ***don't know density at cold temperature***:
-	G4Material* Epoxy=new G4Material("ATEpoxy", density=1.2*g/cm3, ncomponents=2);
-	Epoxy->AddMaterial(EpoxyResin, fractionmass=0.8);
-	Epoxy->AddMaterial(Epoxy13BAC, fractionmass=0.2);
-	//-----------------------------------------------------------------------------
-
-	//just silicon for now
-	G4Material* SiPMT = new G4Material("ATSiPMT", density = 2.329*g/cm3, ncomponents = 1);
-	SiPMT->AddElement(fNistManager->FindOrBuildElement(14),100.*perCent);    //Si
+	//decide which version of helium you are using
+	//G4String fHeMaterial;
+	if(fHeIsotope==3){fHeMaterial="He3GasPure";
+	} else if(fHeIsotope==4){fHeMaterial="He4GasPure";
+	} else {fHeMaterial="ATGasMix";} //make the mix for any non-3,4 argument
 }
