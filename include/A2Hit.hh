@@ -17,6 +17,7 @@ class A2Hit : public G4VHit
 public:
 
   A2Hit();
+  A2Hit(G4LogicalVolume* logVol); //new constructor
   ~A2Hit();
   A2Hit(const A2Hit&);
   const A2Hit& operator=(const
@@ -33,6 +34,7 @@ protected:
 
   G4double fEdep;  // Energy deposited in detector
   G4double fQdep; // Charge deposited in detector
+  const G4LogicalVolume* fLogV; //for new constructor
   G4ThreeVector fPos; // Position of the hit (in what frame?)
   G4int fID; // ID of detector hit
   G4double fTime; // global time of hit

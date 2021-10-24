@@ -20,7 +20,7 @@
 #include "A2SD.hh" //sensitive detector
 #include "A2VisSD.hh" //visual sensitive detector
 #include "A2ElectricField.hh" //my electric field class
-#include "A2HeedModel.hh" //my electron propagation model
+#include "A2DriftModel.hh" //my electron propagation model
 #include "G4FastSimulationManager.hh"
 #include "G4ProductionCuts.hh"
 #include "G4ProductionCutsTable.hh"
@@ -326,17 +326,18 @@ void A2TPC::MakeAnodeCathode(){
                                         (fGThickness)/2, //half length
                                         0.*deg, //start angle
                                         360.*deg); //spanning angle
+	
 	//circular central piece (G-10)
         G4Tubs *fAnodeCentre = new G4Tubs("AnodeCentre",
                                         0,
-                                        10.*mm,
+                                        7.*mm,
                                         fGThickness/2,
                                         0.*deg,
                                         360.*deg);
 	//ring around central piece (G-10)
         G4Tubs *fAnodeRing = new G4Tubs("AnodeRing", 
-					10.*mm,
-                                        20.*mm,
+					7.*mm,
+                                        10.*mm,
                                         fGThickness/2,
                                         0.*deg,
                                         360.*deg);
@@ -347,6 +348,7 @@ void A2TPC::MakeAnodeCathode(){
                         (fAnode,
                          fNistManager->FindOrBuildMaterial(fHeMaterial),
                          "AnodeLogic");
+	
 	//circular central piece (G-10)
         fAnodeCentreLogic = new G4LogicalVolume
                         (fAnodeCentre,
@@ -373,7 +375,8 @@ void A2TPC::MakeAnodeCathode(){
                         "AnodeCentrePlacement", //name
                         fAnodeLogic, //mother volume
                         false, //pmany: always false
-                        2+(fRadialSecs)*(fAngularSecs),fIsOverlapVol); //unique copy number
+                        //1);
+			2+(fRadialSecs)*(fAngularSecs),fIsOverlapVol); //unique copy number
         //ring around central piece (G-10)
 	new G4PVPlacement(0, //rotation
                         G4ThreeVector(0,0,0), //placement
@@ -381,15 +384,16 @@ void A2TPC::MakeAnodeCathode(){
                         "AnodeRingPlacement", //name
                         fAnodeLogic, //mother volume
                         false, //pmany: always false
-                        1+(fRadialSecs)*(fAngularSecs),fIsOverlapVol); //unique copy number
+                        //2);
+			1+(fRadialSecs)*(fAngularSecs),fIsOverlapVol); //unique copy number
 	
 	/*** segments of anode: reads specifications from parameter file ****/
 	/***** define solid and logical volume for each radial section *****/
 	for(G4int k=0; k<fRadialSecs; k++){
 		//section of each row (G-10)
 		fAnodeSec[k] = new G4Tubs("AnodeSec",
-                                        20.*mm+(k)*(fAnodeRadius-20.*mm)/fRadialSecs,
-                                        20.*mm+(k+1)*(fAnodeRadius-20.*mm)/fRadialSecs,
+                                        10*mm+(k)*(fAnodeRadius-10.*mm)/fRadialSecs,
+                                        10*mm+(k+1)*(fAnodeRadius-10.*mm)/fRadialSecs,
                                         fGThickness/2,
                                         0.*deg,
 					360.*deg/fAngularSecs);
@@ -531,14 +535,15 @@ void A2TPC::MakeSensitiveDetector(){
         SDman->AddNewDetector(fAnodeSD); //add this detector to the SD manager
 
         /***** set each piece of anode as part of the sensitive detector *****/
-	fAnodeCentreLogic->SetSensitiveDetector(fAnodeSD); //make sensitive
-        fAnodeRingLogic->SetSensitiveDetector(fAnodeSD); //make sensitive
-        fRegionAnode->AddRootLogicalVolume(fAnodeCentreLogic); //add to region
-	fRegionAnode->AddRootLogicalVolume(fAnodeRingLogic); //add to region
+	
 	for(G4int n=0; n<fRadialSecs; n++){ //for each anode section
 		fAnodeSecLogic[n]->SetSensitiveDetector(fAnodeSD); //make sensitive
 		fRegionAnode->AddRootLogicalVolume(fAnodeSecLogic[n]); //add to region
 	}
+	fAnodeCentreLogic->SetSensitiveDetector(fAnodeSD); //make sensitive
+        fAnodeRingLogic->SetSensitiveDetector(fAnodeSD); //make sensitive
+        fRegionAnode->AddRootLogicalVolume(fAnodeCentreLogic); //add to region
+	fRegionAnode->AddRootLogicalVolume(fAnodeRingLogic); //add to region
     }
 }
 
@@ -555,7 +560,7 @@ void A2TPC::MakeField(){
 	fRegionActiveGas->SetProductionCuts(TPCcuts); //assign this cut to this region
 	
 	/***** attach model of electron drift to active gas region *****/
-	A2HeedModel *driftPhys = new A2HeedModel("Heed TPC Model",fRegionActiveGas,this,fAnodeSD); //create model
+	A2DriftModel *driftPhys = new A2DriftModel("Electron Drift Model",fRegionActiveGas,this,fAnodeSD); //create model
 	G4FastSimulationManager* driftMan = new G4FastSimulationManager(fRegionActiveGas); //call fast simulation manager
 	driftMan->AddFastSimulationModel(driftPhys); //add model as a fast simulation
 	driftMan->ActivateFastSimulationModel("driftPhys"); //activate model
@@ -739,7 +744,7 @@ void A2TPC::DefineMaterials()
 	//G4double he3density = 0.00495*g/cm3; //30bar, calculated from ideal gas law
 	G4double he3density = (fHePressure/20)*0.0033*g/cm3; //scale Phil's IG calculation according to pressure from parameter file 
 
-	G4Material* GasMix = new G4Material("ATGasMix", he3density, ncomponents = 2);
+	G4Material* GasMix = new G4Material("ATGasMix", he3density, ncomponents = 2,kStateGas,CLHEP::STP_Pressure,fHePressure*bar);
 	GasMix->AddElement(ATHe3, 99.95*perCent);                                       //He3
 	// GasMix->AddElement(fNistManager->FindOrBuildElement(2), 99.95*perCent);         //He4
 	GasMix->AddElement(fNistManager->FindOrBuildElement(7), 0.05*perCent);           //N
@@ -747,16 +752,17 @@ void A2TPC::DefineMaterials()
 	//----! IMPORTANT! Epoxy CURRENTLY TAKEN FROM A2 SIMULATION,------------------
 	//NO IDEA WHETHER IT IS CORRECT OR NOT
 
-	G4Material* He3GasPure = new G4Material("He3GasPure", he3density, ncomponents = 1);
+	G4Material* He3GasPure = new G4Material("He3GasPure", he3density, ncomponents = 1,kStateGas,CLHEP::STP_Temperature,fHePressure*bar);
 	He3GasPure->AddElement(ATHe3, 100.*perCent);                                       //He3
 
 	//define He4 in a similar manner
 	G4Element* ATHe4 = new G4Element("ATHe4","ATHe4",ncomponents=1);
 	ATHe4->AddIsotope((G4Isotope*)fNistManager->FindOrBuildElement(2)->GetIsotope(1),100.*perCent);
-	G4double he4density = (fHePressure/20)*0.0033*g/cm3; //scale Phil's IG calculation according to pressure from parameter file
-	//later edit this for 4He specifically
+	//for sake of experimentation, try an even lower density
+	G4double he4density = (fHePressure/20)*0.0033*g/cm3*(4/3); //scale Phil's IG calculation according to pressure from parameter file
+	//4He edit: assume same number density as helium-3, but more nucleons means more mass
 
-	G4Material* He4GasPure = new G4Material("He4GasPure",he4density, ncomponents=1);
+	G4Material* He4GasPure = new G4Material("He4GasPure",he4density, ncomponents=1,kStateGas,CLHEP::STP_Temperature,fHePressure*bar);
 	He4GasPure->AddElement(ATHe4, 100.*perCent);
 
 	//decide which version of helium you are using

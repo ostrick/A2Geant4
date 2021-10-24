@@ -43,6 +43,7 @@ protected:
   Float_t fectapsl[MAXSIZE_TAPS];  //Slow compenent of energy deposited in TAPS crystals(currently Edep in taps)
   Float_t *felab;    //Energy of initial generatd particles
   Float_t *fklab;    //kinetic energy of initial generated particles (for energy resolution in TPC)
+  //Float_t *ftheta;   //theta of initial gen particles (for studies in TPC)
   Float_t feleak;    //Energy leaking out of system (NOT CURRENTLY IMPLEMENTED)
   Float_t fenai;     //Total energy deposited in NaI
   Float_t fetot;     //Total energy deposited in all detectors

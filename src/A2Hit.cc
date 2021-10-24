@@ -15,6 +15,15 @@ A2Hit::A2Hit()
   fTime=0;
 }
 
+//add an option to assign the hit to logical volume
+A2Hit::A2Hit(G4LogicalVolume* logVol):fLogV(logVol){
+  //same as above
+  fEdep=0;
+  fPos.setRThetaPhi(0,0,0);
+  fQdep=0; //charge deposited: for TPC anode
+  fID=0;
+  fTime=0;
+}
 
 A2Hit::~A2Hit()
 { ;}
