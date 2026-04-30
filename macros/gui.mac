@@ -3,6 +3,7 @@
 /gui/addButton g4file Exit "exit"
 /gui/addMenu   viewer Viewer
 /gui/addButton viewer "Qt viewer"            "/control/execute macros/vis.mac"
+/gui/addButton viewer "Inner view"           "/control/execute macros/view_inner.mac"
 /gui/addButton viewer "RayTracer"            "/control/execute macros/RayTracer.mac"
 /gui/addButton viewer "Set style solid"      "/vis/viewer/set/style solid"
 /gui/addButton viewer "Set style wire"       "/vis/viewer/set/style wire"
@@ -16,4 +17,3 @@
 /gui/addButton viewer "Set View Slice Top"  "/vis/viewer/addCutawayPlane 0 0 0 cm 0 -1 0"
 /gui/addMenu movie Movie
 /gui/addButton movie "RayTracer movie"      "/control/execute macros/RayTracer_movie.mac"
-

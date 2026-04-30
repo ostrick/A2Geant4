@@ -1,0 +1,16 @@
+#
+# Switch the current viewer to an inner-detail view.
+# Run this after the normal GUI visualization has opened.
+#
+
+/vis/viewer/clearCutawayPlanes
+/vis/viewer/set/style wireframe
+/vis/viewer/set/viewpointThetaPhi 90. 20.
+/vis/viewer/zoom 2.5
+
+# Display cut only: removes one half of the shown geometry so internals are
+# visible. The real detector geometry is unchanged.
+/vis/viewer/addCutawayPlane 0 0 0 cm 1 0 0
+
+/vis/viewer/rebuild
+/vis/viewer/flush
