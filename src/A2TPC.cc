@@ -251,7 +251,7 @@ void A2TPC::MakeVessel(){
 	G4VisAttributes* lblue  = new G4VisAttributes( G4Colour(0.0,0.0,0.75) );
     	G4VisAttributes* grey   = new G4VisAttributes( G4Colour(0.5,0.5,0.5)  );
     	G4VisAttributes* cyan   = new G4VisAttributes( G4Colour(0.0,1.0,1.0,0.5)  );
-	fVesselLogic->SetVisAttributes(G4VisAttributes::Invisible);
+	fVesselLogic->SetVisAttributes(G4VisAttributes::GetInvisible());
 	fMainCellLogic->SetVisAttributes(grey);
 	//fMainCellLogic->SetVisAttributes(G4VisAttributes::Invisible);
 	fVesselHeLogic->SetVisAttributes(cyan);
@@ -363,7 +363,7 @@ void A2TPC::MakeAnodeCathode(){
 	/***** visualization attributes *****/
         G4VisAttributes* lblue  = new G4VisAttributes( G4Colour(0.0,0.0,0.75) );
         G4VisAttributes* grey   = new G4VisAttributes( G4Colour(0.5,0.5,0.5)  );
-        fAnodeLogic->SetVisAttributes(G4VisAttributes::Invisible);
+        fAnodeLogic->SetVisAttributes(G4VisAttributes::GetInvisible());
         fAnodeCentreLogic->SetVisAttributes(lblue);
         fAnodeRingLogic->SetVisAttributes(lblue);
 
@@ -463,7 +463,7 @@ void A2TPC::MakeGrid(){
 	G4int nWires = fRadius/fWireSpacing-1; //how many different length wires to build
 	G4double fHWL[200]; //half length of each wire
 	G4VisAttributes* grey   = new G4VisAttributes( G4Colour(0.5,0.5,0.5)  );
-        fGridLogic->SetVisAttributes(G4VisAttributes::Invisible);
+        fGridLogic->SetVisAttributes(G4VisAttributes::GetInvisible());
 	
 	/***** make and place each individual wires ******/
 	for(G4int l=0; l<nWires; l++){
@@ -587,7 +587,7 @@ void A2TPC::PlaceParts(){
              fNistManager->FindOrBuildMaterial("G4_AIR"), //material
              "MyLogic");    //name
 	//and set it invisible
-    	fMyLogic->SetVisAttributes(G4VisAttributes::Invisible);
+    	fMyLogic->SetVisAttributes(G4VisAttributes::GetInvisible());
     
 	/**** place anode and cathode to fVesselHeLogic *****/ 
         //first anode, close to beam entrance

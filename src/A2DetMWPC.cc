@@ -412,7 +412,7 @@ void A2DetMWPC::MakeChambers(){
   fCHG1Logic = new G4LogicalVolume(fCHG1, fNistManager->FindOrBuildMaterial("A2_WCMAT"), "CHG1L");
 
 //  fCHG1Logic->SetVisAttributes(ok2_visatt);
-  fCHG1Logic->SetVisAttributes(G4VisAttributes::Invisible); 
+  fCHG1Logic->SetVisAttributes(G4VisAttributes::GetInvisible()); 
 
 
   fCHG2 = new G4Tubs("Gas 2", fchg2_rmin, fchg2_rmax, fdz, 0*deg, 360*deg);
@@ -420,7 +420,7 @@ void A2DetMWPC::MakeChambers(){
   fCHG2Logic = new G4LogicalVolume(fCHG2, fNistManager->FindOrBuildMaterial("A2_WCMAT"), "CHG2L");
 
 //  fCHG2Logic->SetVisAttributes(ok2_visatt);
-  fCHG2Logic->SetVisAttributes(G4VisAttributes::Invisible);
+  fCHG2Logic->SetVisAttributes(G4VisAttributes::GetInvisible());
 }
 
 void A2DetMWPC::MakeSupports(){

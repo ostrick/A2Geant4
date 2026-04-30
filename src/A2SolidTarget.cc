@@ -49,7 +49,7 @@ G4VPhysicalVolume* A2SolidTarget::Construct(G4LogicalVolume *MotherLogic, G4doub
   G4Tubs* MyShape=new G4Tubs("TRGT",0.,rm,zm,0*deg,360*deg);
   fMyLogic=new G4LogicalVolume(MyShape,G4NistManager::Instance()->FindOrBuildMaterial("G4_AIR"),"TRGT");
   fMyPhysi=new G4PVPlacement(0,G4ThreeVector(0,0,zpos),fMyLogic,"TRGT",fMotherLogic,false,1);
-  fMyLogic->SetVisAttributes (G4VisAttributes::Invisible);
+  fMyLogic->SetVisAttributes (G4VisAttributes::GetInvisible());
   //////////////////////
   //CFK tube + window
   /////////////////////
@@ -59,44 +59,44 @@ G4VPhysicalVolume* A2SolidTarget::Construct(G4LogicalVolume *MotherLogic, G4doub
   G4VisAttributes* TarVisAtt= new G4VisAttributes(G4Colour(.0,.0,1.0));
   TarVisAtt->SetForceWireframe(true);
   CFKTLogic->SetVisAttributes(TarVisAtt);
-  CFKTLogic->SetVisAttributes (G4VisAttributes::Invisible);
+  CFKTLogic->SetVisAttributes (G4VisAttributes::GetInvisible());
 
   G4Tubs* VAC1=new G4Tubs("VAC1",0,3.5*cm,zm-0.5*cm,0*deg,360*deg);
   G4LogicalVolume* VAC1Logic=new G4LogicalVolume(VAC1,G4NistManager::Instance()->FindOrBuildMaterial("G4_Galactic"),"VAC1");
   new G4PVPlacement(0,G4ThreeVector(0,0,-0.5*cm),VAC1Logic,"VAC1",CFKTLogic,false,1);
-  VAC1Logic->SetVisAttributes (G4VisAttributes::Invisible);
+  VAC1Logic->SetVisAttributes (G4VisAttributes::GetInvisible());
 
   G4Tubs* FLA1=new G4Tubs("FLA1",0,3.5*cm,0.5*cm,0*deg,360*deg);
   G4LogicalVolume* FLA1Logic=new G4LogicalVolume(FLA1,G4NistManager::Instance()->FindOrBuildMaterial("G4_Al"),"FLA1");
   new G4PVPlacement(0,G4ThreeVector(0,0,zm-0.5*cm-0.25*cm),FLA1Logic,"FLA1",CFKTLogic,false,2);
-  FLA1Logic->SetVisAttributes (G4VisAttributes::Invisible);
+  FLA1Logic->SetVisAttributes (G4VisAttributes::GetInvisible());
 
   G4Tubs* VAC2=new G4Tubs("VAC2",0,3.1*cm,0.3*cm,0*deg,360*deg);
   G4LogicalVolume* VAC2Logic=new G4LogicalVolume(VAC2,G4NistManager::Instance()->FindOrBuildMaterial("G4_Galactic"),"VAC2");
   new G4PVPlacement(0,G4ThreeVector(0,0,-0.2*cm),VAC2Logic,"VAC2",FLA1Logic,false,1);
-  VAC2Logic->SetVisAttributes (G4VisAttributes::Invisible);
+  VAC2Logic->SetVisAttributes (G4VisAttributes::GetInvisible());
 
   G4Cons *VAC3=new G4Cons("VAC3",0*cm,3.1*cm,0*cm,3.19*cm,0.2*cm,0*deg,360*deg);
   G4LogicalVolume* VAC3Logic=new G4LogicalVolume(VAC3,G4NistManager::Instance()->FindOrBuildMaterial("G4_Galactic"),"VAC3");
   //G4VPhysicalVolume* VAC3Physi=new G4PVPlacement(0,G4ThreeVector(0,0,-0.2*cm),VAC3Logic,"VAC3",FLA1Logic,false,2);
   new G4PVPlacement(0,G4ThreeVector(0,0,-0.2*cm),VAC3Logic,"VAC3",FLA1Logic,false,2);
-  VAC3Logic->SetVisAttributes (G4VisAttributes::Invisible);
+  VAC3Logic->SetVisAttributes (G4VisAttributes::GetInvisible());
 
   G4Tubs* FLA2=new G4Tubs("FLA2",0*cm,rm,0.15*cm,0*deg,360*deg);
   G4LogicalVolume* FLA2Logic=new G4LogicalVolume(FLA2,G4NistManager::Instance()->FindOrBuildMaterial("G4_Al"),"FLA2");
   new G4PVPlacement(0,G4ThreeVector(0,0,zm-0.15*cm-0.2*cm),FLA2Logic,"FLA2",fMyLogic,false,2);
-  FLA2Logic->SetVisAttributes (G4VisAttributes::Invisible);
+  FLA2Logic->SetVisAttributes (G4VisAttributes::GetInvisible());
 
   G4Cons *VAC4=new G4Cons("VAC4",0*cm,3.19*cm,0*cm,3.26*cm,0.15*cm,0*deg,360*deg);
   G4LogicalVolume* VAC4Logic=new G4LogicalVolume(VAC4,G4NistManager::Instance()->FindOrBuildMaterial("G4_Galactic"),"VAC4");
   //G4VPhysicalVolume* VAC4Physi=new G4PVPlacement(0,G4ThreeVector(0,0,-0.2*cm),VAC4Logic,"VAC4",FLA2Logic,false,1);
   new G4PVPlacement(0,G4ThreeVector(0,0,-0.2*cm),VAC4Logic,"VAC4",FLA2Logic,false,1);
-  VAC4Logic->SetVisAttributes (G4VisAttributes::Invisible);
+  VAC4Logic->SetVisAttributes (G4VisAttributes::GetInvisible());
 
   G4Tubs* FLA3=new G4Tubs("FLA3",rm-0.68*cm,rm,0.1*cm,0*deg,360*deg);
   G4LogicalVolume* FLA3Logic=new G4LogicalVolume(FLA3,G4NistManager::Instance()->FindOrBuildMaterial("G4_Al"),"FLA3");
   new G4PVPlacement(0,G4ThreeVector(0,0,zm-0.1*cm),FLA3Logic,"FLA3",fMyLogic,false,3);
-  FLA3Logic->SetVisAttributes (G4VisAttributes::Invisible);
+  FLA3Logic->SetVisAttributes (G4VisAttributes::GetInvisible());
 
   //////////////////////////////////////
   //Kapton window
@@ -104,7 +104,7 @@ G4VPhysicalVolume* A2SolidTarget::Construct(G4LogicalVolume *MotherLogic, G4doub
   G4Tubs* WIND=new G4Tubs("WIND",0,rm-0.68*cm,0.006*cm,0*deg,360*deg);
   G4LogicalVolume* WINDLogic=new G4LogicalVolume(WIND,G4NistManager::Instance()->FindOrBuildMaterial("G4_KAPTON"),"WIND");
   new G4PVPlacement(0,G4ThreeVector(0,0,zm-0.2*cm-0.006*cm),WINDLogic,"WIND",fMyLogic,false,4);
-  WINDLogic->SetVisAttributes (G4VisAttributes::Invisible);
+  WINDLogic->SetVisAttributes (G4VisAttributes::GetInvisible());
   /////////////////////////////////////
     //Target cell
     ///////////////////////////////////////

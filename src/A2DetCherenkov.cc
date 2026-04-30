@@ -79,7 +79,7 @@ void A2DetCherenkov::MakeCherenkov(){
     fAirBoxLogic=new G4LogicalVolume(airbox,fNistManager->FindOrBuildMaterial("G4_AIR"),"airbox");
     fAirBoxPhysi=new G4PVPlacement(0, G4ThreeVector(-3.0*cm,0.0*cm,133.*cm), fAirBoxLogic, "airbox", fMotherLogic, false, 0);
 //    fAirBoxLogic->SetVisAttributes(RedVisAtt);
-    fAirBoxLogic->SetVisAttributes(G4VisAttributes::Invisible);
+    fAirBoxLogic->SetVisAttributes(G4VisAttributes::GetInvisible());
 
 
     G4Box* centralbox=new G4Box("centralbox",60.0*cm,60.0*cm,35.9*cm);//box does not contain the Al backplate of 2mm thickness

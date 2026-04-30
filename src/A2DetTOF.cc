@@ -112,7 +112,7 @@ G4VPhysicalVolume* A2DetTOF::Construct(G4LogicalVolume* MotherLogical){
     //The wall volumes
     G4Box *wallBox=new G4Box(G4String("TOFW")+G4String(stname),fBarX[w]/2*fNBars[w],fBarY[w]/2,fBarZ[w]/2*fNLayers[w]);
     G4LogicalVolume* wallLogic=new G4LogicalVolume(wallBox,fNistManager->FindOrBuildMaterial("G4_AIR"),G4String("TOFW")+G4String(stname));
-    wallLogic->SetVisAttributes (G4VisAttributes::Invisible);
+    wallLogic->SetVisAttributes (G4VisAttributes::GetInvisible());
     //Place the wall in the lab.
     Vwall.set(fWallX[w],fWallY[w],fWallZ[w]);
     new G4PVPlacement(0,Vwall,wallLogic,wallBox->GetName(),fMotherLogic,false,1000+w);
@@ -137,7 +137,7 @@ G4VPhysicalVolume* A2DetTOF::Construct(G4LogicalVolume* MotherLogical){
     sprintf(stname,"%d",l);
     G4Box *layBox=new G4Box(G4String("TOFL")+G4String(stname),fBarX[w]/2*fNBars[w],fBarY[w]/2,fBarZ[w]/2);
     G4LogicalVolume* layLogic=new G4LogicalVolume(layBox,fNistManager->FindOrBuildMaterial("G4_AIR"),G4String("TOFL")+G4String(stname)); 
-   layLogic->SetVisAttributes (G4VisAttributes::Invisible);
+   layLogic->SetVisAttributes (G4VisAttributes::GetInvisible());
       layRot->rotateZ(fRotAng[w][l]*deg);
       new G4PVPlacement(layRot,G4ThreeVector(0,0,zlay),layLogic,layBox->GetName(),wallLogic,false,2000*w+l);
       Vlay=Vwall+G4ThreeVector(0,0,zlay);

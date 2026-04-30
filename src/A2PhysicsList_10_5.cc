@@ -48,6 +48,7 @@
 #include "A2PhysicsList.hh"
 #include "A2PhysicsListMessenger.hh"
 
+#include "G4UnitsTable.hh"
 #include "G4DecayPhysics.hh"
 #include "G4EmStandardPhysics.hh"
 #include "G4EmStandardPhysics_option1.hh"
@@ -420,4 +421,3 @@ void A2PhysicsList::SetCutForRegion(G4String reg,G4double cut)
 }
 
 #endif
-

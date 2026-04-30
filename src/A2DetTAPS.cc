@@ -135,7 +135,7 @@ void  A2DetTAPS::MakeForwardWallMother(){
   G4double zpos = fZ0 + (z_Al - z_vbox)/2.;
   fFWMVPhysi=new G4PVPlacement(0,G4ThreeVector(0,0,zpos),fFWMVLogic,"FWMV",fMotherLogic,false,1);
  
-  fFWMVLogic->SetVisAttributes (G4VisAttributes::Invisible);
+  fFWMVLogic->SetVisAttributes (G4VisAttributes::GetInvisible());
 }
 void  A2DetTAPS::MakeCrystals(){
   G4double rin=3.*cm;               //radius of inscribed circle [cm]
@@ -254,9 +254,9 @@ void  A2DetTAPS::MakeCrystals(){
   G4VisAttributes* abox_visatt=new G4VisAttributes();
   abox_visatt->SetForceWireframe(true);
   abox_visatt->SetColor(G4Color(1,1,1));
-  fABOXLogic->SetVisAttributes(G4VisAttributes::Invisible);
-  fCOVRLogic->SetVisAttributes(G4VisAttributes::Invisible);
-  fCOVRPbLogic->SetVisAttributes(G4VisAttributes::Invisible);
+  fABOXLogic->SetVisAttributes(G4VisAttributes::GetInvisible());
+  fCOVRLogic->SetVisAttributes(G4VisAttributes::GetInvisible());
+  fCOVRPbLogic->SetVisAttributes(G4VisAttributes::GetInvisible());
 }
 void  A2DetTAPS::MakeVeto(){
   G4double z_vbox = 10.*cm;   // z size of Veto box
@@ -309,7 +309,7 @@ void  A2DetTAPS::MakeVeto(){
   G4double  zpos2 = -(z_vbox + z_Al)/2. +z_vbox+ vbox_z1[0];
   fVDB2Physi=new G4PVPlacement(0,G4ThreeVector(0,0,zpos2),fVDB2Logic,"VDB2",fFWMVLogic,false,1);
 
-  fVDB1Logic->SetVisAttributes(G4VisAttributes::Invisible);
-  fVDB2Logic->SetVisAttributes(G4VisAttributes::Invisible);
+  fVDB1Logic->SetVisAttributes(G4VisAttributes::GetInvisible());
+  fVDB2Logic->SetVisAttributes(G4VisAttributes::GetInvisible());
   fTVETLogic->SetVisAttributes(vbox_visatt);
 }

@@ -1,90 +1,27 @@
 #
-# Macro file for the initialization phase of "exampleN03.cc"
-# when running in interactive mode
-#####Pre-Initialisation
-#Choose a physics list, for a full listing type /A2/physics/ListPhysics
+# Geometry-only visualization macro for A2Geant4.
+#
+# This macro intentionally does not configure particles, sources, events or
+# physics-list commands. It only initializes the already selected detector
+# setup and draws the constructed geometry.
+#
 
-#/A2/physics/Physics QGSP_BIC
+/control/verbose 1
+/run/verbose 1
+/vis/verbose warnings
 
-####Initialise
 /run/initialize
 
-
-#
-# Sets some default verbose
-#
-/control/verbose 2
-/control/saveHistory
-/run/verbose 2
-/vis/verbose 0
-#
-# create empty scene
-#
+/vis/open TSGQtZB 1200x900-0+0
 /vis/scene/create
-#
-# Create a scene handler for a specific graphics system
-# (Edit the next line(s) to choose another graphic system)
-#
-# Use this open statement to get an .eps and .prim files
-# suitable for viewing in DAWN.
-#/vis/open DAWNFILE
-#
-# Use this open statement instead for OpenGL in immediate mode.
-#/vis/open OGLIXm
-#/vis/open RayTracer
-#
-# Use this open statement instead to get a HepRep version 1 file
-# suitable for viewing in WIRED.
-#/vis/open HepRepFile
-#
-# Use this open statement instead to get a HepRep version 2 file
-# suitable for viewing in WIRED.
-#/vis/open HepRepXML
-#
-# Output an empty detector
-#/vis/viewer/flush
+/vis/drawVolume
 
-#
-# for drawing the tracks
-# (if too many tracks cause core dump => storeTrajectory 0)
-#
-/tracking/storeTrajectory 1
-/vis/scene/endOfEventAction accumulate
-#
-# At end of each run, an automatic flush causes graphical output.
-#/run/beamOn 1
-# When you exit Geant4, you will find a file called scene-0.heprep.zip.
-# Unzipping this will give you three separate HepRep files suitable for
-# viewing in WIRED.
-# The first file will contain just detector geometry.
-# The second file will contain the detector plus one event.
-# The third file will contain the detector plus ten events.
-#/vis/open OGLI
-/vis/open OGL 800x600-0+0
-#/vis/open OGLIX
-#/vis/open DAWNFILE
-#/vis/scene/create 
-#/vis/viewer/reset
-/vis/viewer/zoom 2.
-#/vis/viewer/set/viewpointThetaPhi 130. 40.
-/vis/viewer/set/viewpointThetaPhi 140. 30.
 /vis/viewer/set/style surface
-#/vis/drawVolume
-#/vis/scene/endOfEventAction accumulate	
-/tracking/storeTrajectory 1	
-#/vis/geometry/set/visibility CNIN 0 false
-#/vis/geometry/set/forceAuxEdgeVisible World -1 true
+/vis/viewer/set/hiddenMarker true
+/vis/viewer/set/viewpointThetaPhi 140. 30.
+/vis/viewer/zoom 1.5
 /vis/viewer/set/autoRefresh true
-/vis/verbose warnings
-#/vis/scene/add/axes 0 0 0 5.00 cm
 
-#/gun/particle alpha
-#/gun/energy 1 MeV
-#/gun/direction 0 0 1
-#/gun/position 0 0 0
-
-/gun/particle opticalphoton
-/gun/energy 3.0 eV
-/gun/position 4.0 0 0
-/gun/direction 0.25 0 0.5
-/gun/polarization 0 1 0
+/vis/scene/add/axes 0 0 0 20 cm
+/vis/viewer/rebuild
+/vis/viewer/flush

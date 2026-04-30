@@ -282,17 +282,17 @@ void A2ActiveHe3::MakeVessel() {
     //G4VisAttributes* grey   = new G4VisAttributes( G4Colour(0.5,0.5,0.5)  );
     G4VisAttributes* cyan   = new G4VisAttributes( G4Colour(0.0,1.0,1.0,0.5)  );
 
-    fVesselLogic->SetVisAttributes(G4VisAttributes::Invisible);
+    fVesselLogic->SetVisAttributes(G4VisAttributes::GetInvisible());
     //LMainCell->SetVisAttributes(grey);
-    LMainCell->SetVisAttributes(G4VisAttributes::Invisible);
+    LMainCell->SetVisAttributes(G4VisAttributes::GetInvisible());
     //LExtCellU->SetVisAttributes(grey);
-    LExtCellU->SetVisAttributes(G4VisAttributes::Invisible);
+    LExtCellU->SetVisAttributes(G4VisAttributes::GetInvisible());
     //LExtCellD->SetVisAttributes(grey);
-    LExtCellD->SetVisAttributes(G4VisAttributes::Invisible);
+    LExtCellD->SetVisAttributes(G4VisAttributes::GetInvisible());
     //LMainCellEnd->SetVisAttributes(grey);
-    LMainCellEnd->SetVisAttributes(G4VisAttributes::Invisible);
+    LMainCellEnd->SetVisAttributes(G4VisAttributes::GetInvisible());
     //LBerylliumWindow->SetVisAttributes(lblue);
-    LBerylliumWindow->SetVisAttributes(G4VisAttributes::Invisible);
+    LBerylliumWindow->SetVisAttributes(G4VisAttributes::GetInvisible());
 
     //------------------------------------------------------------------------------
     //Here we use the same volumes for the nitrogen shifted and plate/fiber shifted
@@ -694,7 +694,7 @@ void A2ActiveHe3::MakeTeflonLayer() {
     G4VisAttributes* blue   = new G4VisAttributes( G4Colour(0.0,0.0,1.0)  );
     G4VisAttributes* cyan   = new G4VisAttributes( G4Colour(0.0,1.0,1.0)  );
 
-    fTeflonLogic->SetVisAttributes(G4VisAttributes::Invisible);
+    fTeflonLogic->SetVisAttributes(G4VisAttributes::GetInvisible());
     fTeflonCylLogic ->SetVisAttributes(red);
     fTeflonCylEndLogic->SetVisAttributes(red);
     fMylarLogic->SetVisAttributes(blue);
@@ -983,7 +983,7 @@ void A2ActiveHe3::PlaceParts() {
              fNistManager->FindOrBuildMaterial("G4_AIR"), //material
              "LfMyLogic");                                //name
 
-    fMyLogic->SetVisAttributes(G4VisAttributes::Invisible);
+    fMyLogic->SetVisAttributes(G4VisAttributes::GetInvisible());
 
     //------------------------------------------------------------------------------
     //Place parts of the detector

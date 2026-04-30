@@ -254,7 +254,7 @@ G4VPhysicalVolume* A2DetectorConstruction::Construct()
   //                                        
   // Visualization attributes
   //
-  fWorldLogic->SetVisAttributes (G4VisAttributes::Invisible);
+  fWorldLogic->SetVisAttributes (G4VisAttributes::GetInvisible());
 
 //   G4Tubs *BeamLine=new G4Tubs("BeamLine",0.,1*cm,2*m,0,2*3.1415);
 //   G4LogicalVolume* BeamLogic=new G4LogicalVolume(BeamLine,G4NistManager::Instance()->FindOrBuildMaterial("G4_AIR"),"BeamLine");

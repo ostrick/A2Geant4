@@ -84,7 +84,7 @@ G4VPhysicalVolume* A2SolidTargetGeneric::Construct(G4LogicalVolume* motherLogic,
     // construct the air tube
     G4Tubs* airTube = new G4Tubs("TRGT", 0, airTube_radius, airTube_length / 2., 0*deg, 360*deg);
     fMyLogic = new G4LogicalVolume(airTube, fNistManager->FindOrBuildMaterial("G4_AIR"), "TRGT");
-    fMyLogic->SetVisAttributes(G4VisAttributes::Invisible);
+    fMyLogic->SetVisAttributes(G4VisAttributes::GetInvisible());
     fMyPhysi = new G4PVPlacement(0, G4ThreeVector(0.0*cm, 0.0*cm, airTube_z0), fMyLogic, "TRGT",
                                  fMotherLogic, false, 0);
     A2Utils::CheckOverlapAndAbort(fMyPhysi, "A2SolidTargetGeneric::Construct()");

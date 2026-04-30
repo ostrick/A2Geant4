@@ -28,7 +28,7 @@ A2PolarizedTarget::~A2PolarizedTarget()
 void A2PolarizedTarget::SetMagneticField(G4String &nameFileFieldMap)
 {
   // If nameFileFieldMap is a NULL string then do not set the target magnetic field
-  if(nameFileFieldMap.isNull()) {G4cout<<"Warning A2PolarizedTarget::SetMagneticField No field map given, therefore there will be no field!"<<G4endl;return;}
+  if(nameFileFieldMap.empty()) {G4cout<<"Warning A2PolarizedTarget::SetMagneticField No field map given, therefore there will be no field!"<<G4endl;return;}
   
   // Create magnetic field
   fMagneticField = new A2MagneticField();
@@ -81,7 +81,7 @@ G4VPhysicalVolume* A2PolarizedTarget::Construct(G4LogicalVolume *MotherLogic, G4
  fMyPhysi=new G4PVPlacement(0,G4ThreeVector(0,0, Z0 - 20.0*mm/2 - 11.5*mm - 231.5*mm + l_TRGT/2.),fMyLogic,"TRGT",fMotherLogic,false,1);
  fCenter.set(0, 0, Z0);
  G4cout << "Target centre " << fCenter.z() << G4endl;
- fMyLogic->SetVisAttributes (G4VisAttributes::Invisible);
+ fMyLogic->SetVisAttributes (G4VisAttributes::GetInvisible());
 
  //Colours with thier corresponding materials used in the visualization:
  G4VisAttributes* SSVisAtt= new G4VisAttributes(G4Colour(0.8,0.8,0.8)); //stainless steel (grey)
