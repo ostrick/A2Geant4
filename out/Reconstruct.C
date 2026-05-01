@@ -174,9 +174,9 @@ void Reconstruct(TString filename){
 		energy_rec=GetEnergy(charge);
 		theta_rec=GetTheta(mintime,maxtime,minx,maxx);	
 		//get true variables
-		theta_true=acos(dircos[0][2])*180/3.14;
+		theta_true=acos(dircos[1][2])*180/3.14;
 		z_true=vertex[2];
-		energy_true=klab[0];
+		energy_true=klab[1];
 		//write to tree
 		goat->Fill();
 	}

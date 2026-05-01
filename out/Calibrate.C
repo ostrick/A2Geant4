@@ -45,7 +45,7 @@ void Calibrate(){
 	Float_t e_mev[16], e_err[16], q_avg[16], q_err[16]; //charge, energy, errors
 	//read in the files to assign data
 	Int_t e1, e0;
-	for(int i=2; i<25; i++){ //23 calibration points
+	for(int i=2; i<23; i++){ //23 calibration points
 	        e_mev[i-2] = 0.5*i; //every 2 MeV from 2 to 12
        		e_err[i-2] = 0.1; 
 		if (i%2==0){
